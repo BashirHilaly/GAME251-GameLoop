@@ -1,0 +1,191 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <title>Smooth Game Loop with Key Controls</title>
+</head>
+<body class="bg-gradient-to-r from-neutral-300 to-stone-400">
+
+    <section class="bg-gray-900 text-white">
+        <div class="py-10 lg:flex lg:items-center">
+          <div class="mx-auto max-w-3xl text-center">
+            <h1
+              class="bg-gradient-to-r from-green-300 via-blue-500 to-purple-600 bg-clip-text text-3xl font-extrabold text-transparent sm:text-5xl"
+            >
+              Score: <span class="text-white" id="score"></span>
+            </h1>
+      
+      
+          </div>
+        </div>
+    </section>
+
+    <canvas id="gameCanvas" width="400" height="400"></canvas>
+	<!-- //**** Define a score Element and give an id of score, intial value of 0 -->
+
+
+
+    <script>
+        const canvas = document.getElementById("gameCanvas");
+        const ctx = canvas.getContext("2d");
+        const renderedScore = document.getElementById("score");
+		
+		//**** Save the define scoring Element in a variable,similar to how you get canvas ****//
+
+        // Stretch canvas across the screen
+        canvas.width = window.innerWidth - 50;
+        canvas.height = window.innerHeight - 250;
+		
+        let playerX = 50;
+        let playerY = canvas.height - 50;
+        const playerSize = 30;
+
+        let items = [];
+        const itemSize = 20;
+        const maxItems = 5;
+
+        let badItems = [];
+        const badItemSize = 20;
+        const maxBadItems = 2;
+
+
+        let score = 0;
+
+        let lastTimestamp = 0;
+        let deltaTime = 0;
+
+        let movingLeft = false;
+        let movingRight = false;
+
+        let playerSpeed = 650;
+
+        function gameLoop(timestamp) {
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+            // Calculate delta time (time since the last frame)
+            if (lastTimestamp !== 0) {
+                deltaTime = (timestamp - lastTimestamp) / 1000; // Convert to seconds
+            }
+            lastTimestamp = timestamp;
+
+            // Move the player smoothly based on delta time
+            if (movingLeft) {
+                playerX -= playerSpeed * deltaTime; // Adjust movement speed using delta time
+            } else if (movingRight) {
+                playerX += playerSpeed * deltaTime; // Adjust movement speed using delta time
+            }
+
+            // Ensure the player stays within the canvas
+            if (playerX < 0) {
+                playerX = 0;
+            } else if (playerX > canvas.width - playerSize) {
+                playerX = canvas.width - playerSize;
+            }
+
+            // Draw the player
+            ctx.fillStyle = "blue";
+            ctx.fillRect(playerX, playerY, playerSize, playerSize);
+
+            // Create an array to hold indices of items to be removed
+            let itemsToRemove = [];
+
+            // Move and draw items
+            for (let i = 0; i < items.length; i++) {
+                items[i].y += 200 * deltaTime; // Adjust item speed using delta time
+                ctx.fillStyle = "green";
+                ctx.fillRect(items[i].x, items[i].y, itemSize, itemSize);
+
+                // Check for collision with player
+                if (
+                    playerX < items[i].x + itemSize &&
+                    playerX + playerSize > items[i].x &&
+                    playerY < items[i].y + itemSize &&
+                    playerY + playerSize > items[i].y
+                ) {
+                    itemsToRemove.push(i); // Mark item for removal
+                    score += 10;
+                }
+
+                // Check if the item is still within the canvas
+                if (items[i].y + itemSize < canvas.height) {
+                    // Keep the item
+                } else {
+                    itemsToRemove.push(i); // Mark item for removal
+                }
+            }
+
+            // Remove items that are marked for removal
+            for (let i = itemsToRemove.length - 1; i >= 0; i--) {
+                items.splice(itemsToRemove[i], 1);
+            }
+
+            // Generate new items
+            if (items.length < maxItems && Math.random() < 0.02) {
+                const itemX = Math.random() * (canvas.width - itemSize);
+                items.push({ x: itemX, y: 0 });
+            }
+
+            let badItemsToRemove = [];
+            // Move and draw items
+            for (let i = 0; i < badItems.length; i++) {
+                badItems[i].y += 200 * deltaTime; // Adjust item speed using delta time
+                ctx.fillStyle = "red";
+                ctx.fillRect(badItems[i].x, badItems[i].y, badItemSize, badItemSize);
+
+                // Check for collision with player
+                if (
+                    playerX < badItems[i].x + badItemSize &&
+                    playerX + playerSize > badItems[i].x &&
+                    playerY < badItems[i].y + badItemSize &&
+                    playerY + playerSize > badItems[i].y
+                ) {
+                    badItemsToRemove.push(i); // Mark item for removal
+                    score -= 10;
+                }
+
+                // Check if the item is still within the canvas
+                if (badItems[i].y + badItemSize < canvas.height) {
+                    // Keep the item
+                } else {
+                    badItemsToRemove.push(i); // Mark item for removal
+                }
+            }
+
+            // Remove items that are marked for removal
+            for (let i = badItemsToRemove.length - 1; i >= 0; i--) {
+                badItems.splice(badItemsToRemove[i], 1);
+            }
+
+            // Generate new items
+            if (badItems.length < maxBadItems && Math.random() < 0.02) {
+                const badItemX = Math.random() * (canvas.width - badItemSize);
+                badItems.push({ x: badItemX, y: 0 });
+            }
+
+            requestAnimationFrame(gameLoop);
+
+            // Change renderedScore to score
+            renderedScore.innerHTML = score
+        }
+
+        // Handle player movement
+        document.addEventListener("keydown", function(event) {
+            if (event.key === "ArrowLeft") {
+                movingLeft = true;
+            } else if (event.key === "ArrowRight") {
+                movingRight = true;
+            }
+        });
+
+        document.addEventListener("keyup", function(event) {
+            if (event.key === "ArrowLeft") {
+                movingLeft = false;
+            } else if (event.key === "ArrowRight") {
+                movingRight = false;
+            }
+        });
+
+        gameLoop(0); // Start the game loop with an initial timestamp
+    </script>
+</body>
+</html>
